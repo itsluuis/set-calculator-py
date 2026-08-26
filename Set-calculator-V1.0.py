@@ -129,9 +129,20 @@ class SetCalculatorApp(ctk.CTk):
         self.btn_generate = ctk.CTkButton(self.frame_gen, text="Generar Todo", fg_color="#00509E", hover_color="#003f7a", command=self.generate_sets)
         self.btn_generate.pack(side="right", padx=20, pady=10)
 
-        # Displays de Conjuntos
-        self.lbl_sets_display = ctk.CTkLabel(self.work_area, text="U = {}\nA = {}\nB = {}\nC = {}\nD = {}", justify="left", font=("Consolas", 12), text_color="#000000")
-        self.lbl_sets_display.pack(fill="x", padx=10)
+        # Entradas de Conjuntos
+        self.frame_sets_input = ctk.CTkFrame(self.work_area, fg_color="#FFFFFF")
+        self.frame_sets_input.pack(fill="x", padx=10, pady=5)
+        
+        ctk.CTkLabel(self.frame_sets_input, text="Información: La cantidad mínima de elementos es 0 (vacío) y la máxima es el límite de procesamiento.", font=("Arial", 11, "italic"), text_color="#666666").pack(anchor="w", padx=5, pady=2)
+
+        self.entries = {}
+        for name in ["U", "A", "B", "C", "D"]:
+            row = ctk.CTkFrame(self.frame_sets_input, fg_color="transparent")
+            row.pack(fill="x", pady=2)
+            ctk.CTkLabel(row, text=f"{name} =", font=("Consolas", 14, "bold"), text_color="#00509E", width=30).pack(side="left")
+            entry = ctk.CTkEntry(row, placeholder_text=f"Elementos separados por comas", fg_color="#F0F8FF", text_color="#000000")
+            entry.pack(side="left", fill="x", expand=True, padx=5)
+            self.entries[name] = entry
 
         # --- SECCIÓN: Calculadora ---
         self.frame_calc = ctk.CTkFrame(self.work_area, fg_color="#E6F2FF")
@@ -164,13 +175,17 @@ class SetCalculatorApp(ctk.CTk):
 
         ctk.CTkButton(action_frame, text="Borrar", fg_color="#FF4D4D", hover_color="#cc0000", command=self.clear_expression).pack(side="left", padx=10)
         ctk.CTkButton(action_frame, text="Validar y Calcular", fg_color="#00509E", hover_color="#003f7a", command=self.calculate).pack(side="left", padx=10)
-        ctk.CTkButton(action_frame, text="Ventana de Validación", fg_color="#00509E", hover_color="#003f7a", command=self.open_validation_window).pack(side="left", padx=10)
 
         # --- SECCIÓN: Resultados y Diagrama ---
         self.frame_results = ctk.CTkFrame(self.work_area, fg_color="#FFFFFF")
         self.frame_results.pack(fill="both", expand=True, pady=10, padx=10)
 
-        self.lbl_result = ctk.CTkLabel(self.frame_results, text="Resultado: ", font=("Arial", 14, "bold"), text_color="#000000", wraplength=600)
+        self.txt_validation = ctk.CTkTextbox(self.frame_results, height=80, fg_color="#F0F8FF", text_color="#000000")
+        self.txt_validation.pack(fill="x", pady=5)
+        self.txt_validation.insert("0.0", "Las validaciones aparecerán aquí al calcular...")
+        self.txt_validation.configure(state="disabled")
+
+        self.lbl_result = ctk.CTkLabel(self.frame_results, text="Resultado: ", font=("Arial", 14, "bold"), text_color="#000000", wraplength=800)
         self.lbl_result.pack(pady=5)
 
         self.fig, self.ax = plt.subplots(figsize=(5, 4))
@@ -205,33 +220,7 @@ class SetCalculatorApp(ctk.CTk):
             v.pack_forget()
         view.pack(fill="both", expand=True)
 
-    def open_validation_window(self):
-        val_win = ctk.CTkToplevel(self)
-        val_win.title("Validaciones de Conjuntos")
-        val_win.geometry("500x400")
-        val_win.configure(fg_color="#FFFFFF")
-        
-        txt_log = ctk.CTkTextbox(val_win, width=480, height=380, fg_color="#F0F8FF", text_color="#000000")
-        txt_log.pack(padx=10, pady=10)
-        
-        # Validar subconjuntos estrictamente
-        log = "Iniciando validación de la Teoría de Conjuntos...\n\n"
-        subsets = {'A': self.A, 'B': self.B, 'C': self.C, 'D': self.D}
-        all_valid = True
-        
-        for name, subset in subsets.items():
-            if not subset.issubset(self.U):
-                invalid_elements = subset - self.U
-                log += f"[ERROR] El conjunto {name} contiene elementos que no están en U: {invalid_elements}\n"
-                all_valid = False
-            else:
-                log += f"[OK] El conjunto {name} es un subconjunto válido de U.\n"
-                
-        if all_valid:
-            log += "\n[ÉXITO] Todos los conjuntos respetan la norma fundamental de pertenencia al Conjunto Universal.\n"
-        
-        txt_log.insert("0.0", log)
-        txt_log.configure(state="disabled")
+
 
     # --- FUNCIONES DE USUARIO ---
     def do_register(self):
@@ -337,7 +326,9 @@ class SetCalculatorApp(ctk.CTk):
         self.C = set(random.sample(u_list, random.randint(0, len(u_list))))
         self.D = set(random.sample(u_list, random.randint(0, len(u_list))))
 
-        self.lbl_sets_display.configure(text=f"U = {self.U}\n\nA = {self.A}\nB = {self.B}\nC = {self.C}\nD = {self.D}")
+        for name, subset in [("U", self.U), ("A", self.A), ("B", self.B), ("C", self.C), ("D", self.D)]:
+            self.entries[name].delete(0, 'end')
+            self.entries[name].insert(0, ", ".join(sorted(list(subset))))
         self.clear_expression()
         self.ax.clear()
         self.canvas.draw()
@@ -351,25 +342,51 @@ class SetCalculatorApp(ctk.CTk):
         self.lbl_expr.configure(text="Expresión: ")
         self.lbl_result.configure(text="Resultado: ")
 
+    def read_sets_from_ui(self):
+        def parse_set(s):
+            if not s.strip(): return set()
+            return {x.strip() for x in s.split(",") if x.strip()}
+        
+        self.U = parse_set(self.entries["U"].get())
+        self.A = parse_set(self.entries["A"].get())
+        self.B = parse_set(self.entries["B"].get())
+        self.C = parse_set(self.entries["C"].get())
+        self.D = parse_set(self.entries["D"].get())
+
     def validate_strict_rules(self):
-        # Validación antes de calcular: Asegurar que todos los elementos de A, B, C, D existen en U
-        subsets = [self.A, self.B, self.C, self.D]
-        for sub in subsets:
-            if not sub.issubset(self.U):
-                messagebox.showerror("Error de Validación", "Se rompió la norma: Existen elementos en un subconjunto que no están en el conjunto Universal U.")
-                return False
-        return True
+        self.txt_validation.configure(state="normal")
+        self.txt_validation.delete("0.0", "end")
+        
+        log = "Validando reglas de Teoría de Conjuntos...\n"
+        subsets = {'A': self.A, 'B': self.B, 'C': self.C, 'D': self.D}
+        all_valid = True
+        
+        for name, subset in subsets.items():
+            if not subset.issubset(self.U):
+                invalid_elements = subset - self.U
+                log += f"[ERROR] {name} contiene elementos que no están en U: {invalid_elements}\n"
+                all_valid = False
+            else:
+                log += f"[OK] {name} es un subconjunto válido de U.\n"
+                
+        if all_valid:
+            log += "[ÉXITO] Todos los conjuntos respetan la pertenencia al Conjunto Universal.\n"
+        else:
+            log += "\n[!] Validación fallida. Revisa los elementos."
+            
+        self.txt_validation.insert("0.0", log)
+        self.txt_validation.configure(state="disabled")
+        return all_valid
 
     def calculate(self):
-        if not self.U:
-            messagebox.showwarning("Atención", "Genera los conjuntos primero.")
-            return
+        self.read_sets_from_ui()
             
         if not self.validate_strict_rules():
             return
 
         expr = self.expression
         if not expr:
+            self.update_venn_diagram()
             return
 
         # Parseo seguro de la expresión matemática a operadores de Python
@@ -389,7 +406,15 @@ class SetCalculatorApp(ctk.CTk):
             if not isinstance(result, set):
                 raise ValueError("La expresión no resultó en un conjunto.")
             
-            self.lbl_result.configure(text=f"Resultado: {result}")
+            if len(result) == 0:
+                tipo = "Vacío"
+            elif len(result) == 1:
+                tipo = "Unitario"
+            else:
+                tipo = "Finito"
+                
+            res_str = "{" + ", ".join(sorted(list(result))) + "}" if result else "{}"
+            self.lbl_result.configure(text=f"{self.expression} = {res_str}   |   Tipo de conjunto resultante: {tipo}")
             self.update_venn_diagram()
             
         except Exception as e:
