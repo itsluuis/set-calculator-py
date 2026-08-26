@@ -194,6 +194,11 @@ class SetCalculatorApp(ctk.CTk):
         self.frame_results = ctk.CTkFrame(self.work_area, fg_color="#FFFFFF")
         self.frame_results.pack(fill="both", expand=True, pady=10, padx=10)
 
+        self.txt_extra_results = ctk.CTkTextbox(self.frame_results, height=120, fg_color="#E6F2FF", text_color="#000000")
+        self.txt_extra_results.pack(fill="x", pady=5)
+        self.txt_extra_results.insert("0.0", "Los resultados de las 24 posibles operaciones aparecerán aquí...")
+        self.txt_extra_results.configure(state="disabled")
+
         self.txt_validation = ctk.CTkTextbox(self.frame_results, height=80, fg_color="#F0F8FF", text_color="#000000")
         self.txt_validation.pack(fill="x", pady=5)
         self.txt_validation.insert("0.0", "Las validaciones aparecerán aquí al calcular...")
@@ -355,6 +360,10 @@ class SetCalculatorApp(ctk.CTk):
         self.expression = ""
         self.lbl_expr.configure(text="Expresión: ")
         self.lbl_result.configure(text="Resultado: ")
+        self.txt_extra_results.configure(state="normal")
+        self.txt_extra_results.delete("0.0", "end")
+        self.txt_extra_results.insert("0.0", "Los resultados de las 24 posibles operaciones aparecerán aquí...")
+        self.txt_extra_results.configure(state="disabled")
 
     def read_sets_from_ui(self):
         def parse_set(s):
@@ -548,10 +557,10 @@ class SetCalculatorApp(ctk.CTk):
             except Exception as e:
                 log += f"{expr} = [Error en cálculo]\n"
                 
-        self.txt_validation.configure(state="normal")
-        self.txt_validation.delete("0.0", "end")
-        self.txt_validation.insert("0.0", log)
-        self.txt_validation.configure(state="disabled")
+        self.txt_extra_results.configure(state="normal")
+        self.txt_extra_results.delete("0.0", "end")
+        self.txt_extra_results.insert("0.0", log)
+        self.txt_extra_results.configure(state="disabled")
         
         self.lbl_result.configure(text="Se han calculado las 24 operaciones. Revisa el cuadro superior para ver todos los resultados.")
         
