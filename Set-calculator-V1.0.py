@@ -108,7 +108,7 @@ class SetCalculatorApp(ctk.CTk):
         self.show_view(self.view_register)
 
         # Área Central de Trabajo
-        self.work_area = ctk.CTkFrame(self.main_container, fg_color="#FFFFFF")
+        self.work_area = ctk.CTkScrollableFrame(self.main_container, fg_color="#FFFFFF")
         self.work_area.pack(side="right", fill="both", expand=True, padx=(100, 20), pady=20)
 
         # --- SECCIÓN: Generación de Conjuntos ---
@@ -188,7 +188,7 @@ class SetCalculatorApp(ctk.CTk):
         self.lbl_result = ctk.CTkLabel(self.frame_results, text="Resultado: ", font=("Arial", 14, "bold"), text_color="#000000", wraplength=800)
         self.lbl_result.pack(pady=5)
 
-        self.fig, self.ax = plt.subplots(figsize=(5, 4))
+        self.fig, self.ax = plt.subplots(figsize=(6, 6))
         self.fig.patch.set_facecolor('#FFFFFF')
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.frame_results)
         self.canvas.get_tk_widget().pack(fill="both", expand=True)
@@ -344,6 +344,8 @@ class SetCalculatorApp(ctk.CTk):
 
     def read_sets_from_ui(self):
         def parse_set(s):
+            # Limpiar llaves en caso de que el usuario las escriba manualmente
+            s = s.replace('{', '').replace('}', '')
             if not s.strip(): return set()
             return {x.strip() for x in s.split(",") if x.strip()}
         
@@ -352,6 +354,14 @@ class SetCalculatorApp(ctk.CTk):
         self.B = parse_set(self.entries["B"].get())
         self.C = parse_set(self.entries["C"].get())
         self.D = parse_set(self.entries["D"].get())
+        
+        # Para evitar problemas de lógica, si hay elementos en los subconjuntos 
+        # que no están en U, los agregamos automáticamente al conjunto universal.
+        missing_in_u = (self.A | self.B | self.C | self.D) - self.U
+        if missing_in_u:
+            self.U.update(missing_in_u)
+            self.entries["U"].delete(0, 'end')
+            self.entries["U"].insert(0, ", ".join(sorted(list(self.U))))
 
     def validate_strict_rules(self):
         self.txt_validation.configure(state="normal")
@@ -423,6 +433,7 @@ class SetCalculatorApp(ctk.CTk):
     def update_venn_diagram(self):
         self.ax.clear()
         self.ax.axis('off')
+        self.ax.set_aspect('equal') # Escala 1:1 para el diagrama
         
         # Para representar de forma matemáticamente exacta cualquier operación hasta de 4 conjuntos 
         # (incluyendo intersecciones complejas), usamos una malla de booleanos (grid evaluation).
