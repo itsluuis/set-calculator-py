@@ -186,7 +186,9 @@ class SetCalculatorApp(ctk.CTk):
         self.combo_all_op.pack(side="left", padx=5)
         ctk.CTkButton(auto_op_frame, text="Operar Todos", fg_color="#3A86FF", hover_color="#2a62bc", command=self.operate_all).pack(side="left", padx=5)
 
-        ctk.CTkButton(auto_op_frame, text="Operación Aleatoria", fg_color="#8338ec", hover_color="#6227b6", command=self.random_operation).pack(side="left", padx=20)
+        ctk.CTkButton(auto_op_frame, text="Operación Aleatoria", fg_color="#8338ec", hover_color="#6227b6", command=self.random_operation).pack(side="left", padx=10)
+        
+        ctk.CTkButton(auto_op_frame, text="Todas las posibles (24)", fg_color="#ff9900", hover_color="#cc7a00", command=self.all_possible_operations).pack(side="left", padx=10)
 
         # --- SECCIÓN: Resultados y Diagrama ---
         self.frame_results = ctk.CTkFrame(self.work_area, fg_color="#FFFFFF")
@@ -518,6 +520,44 @@ class SetCalculatorApp(ctk.CTk):
         self.expression = expr
         self.lbl_expr.configure(text=f"Expresión: {self.expression}")
         self.calculate()
+
+    def all_possible_operations(self):
+        import itertools
+        self.read_sets_from_ui()
+        if not self.validate_strict_rules():
+            return
+            
+        op = self.all_op_var.get()
+        subsets = ['A', 'B', 'C', 'D']
+        permutations = list(itertools.permutations(subsets))
+        
+        context = {
+            'A': self.A, 'B': self.B, 'C': self.C, 'D': self.D, 'U': self.U
+        }
+        
+        log = f"Resultados para las 24 permutaciones posibles usando el operador '{op}':\n\n"
+        
+        for p in permutations:
+            expr = f" {op} ".join(p)
+            eval_expr = expr.replace('∪', '|').replace('∩', '&').replace('Δ', '^').replace('-', '& ~')
+            
+            try:
+                result = eval(eval_expr, {"__builtins__": None}, context)
+                res_str = "{" + ", ".join(sorted(list(result))) + "}" if result else "{}"
+                log += f"{expr} = {res_str}\n"
+            except Exception as e:
+                log += f"{expr} = [Error en cálculo]\n"
+                
+        self.txt_validation.configure(state="normal")
+        self.txt_validation.delete("0.0", "end")
+        self.txt_validation.insert("0.0", log)
+        self.txt_validation.configure(state="disabled")
+        
+        self.lbl_result.configure(text="Se han calculado las 24 operaciones. Revisa el cuadro superior para ver todos los resultados.")
+        
+        # Mostrar el primer resultado en el diagrama
+        self.expression = f" {op} ".join(permutations[0])
+        self.update_venn_diagram()
 
 if __name__ == "__main__":
     app = SetCalculatorApp()
