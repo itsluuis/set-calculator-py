@@ -58,26 +58,54 @@ class SetCalculatorApp(ctk.CTk):
         )
         self.btn_toggle_login.place(x=10, y=10)
 
-        # Panel Lateral de Login (Oculto por defecto)
-        self.sidebar = ctk.CTkFrame(self, width=250, corner_radius=0, fg_color="#F0F8FF")
+        # Panel Lateral de Login (Oculto por defecto) - Ancho ampliado a 400
+        self.sidebar = ctk.CTkFrame(self, width=400, corner_radius=0, fg_color="#F0F8FF")
         
-        self.lbl_user_status = ctk.CTkLabel(self.sidebar, text="No has iniciado sesión", font=("Arial", 14, "bold"), text_color="#00509E")
+        self.lbl_user_status = ctk.CTkLabel(self.sidebar, text="No has iniciado sesión", font=("Arial", 16, "bold"), text_color="#00509E")
         self.lbl_user_status.pack(pady=20)
 
-        self.entry_username = ctk.CTkEntry(self.sidebar, placeholder_text="Nombre de Usuario", fg_color="#FFFFFF", text_color="#000000")
-        self.entry_username.pack(pady=10, padx=20, fill="x")
+        self.sidebar_content = ctk.CTkFrame(self.sidebar, fg_color="transparent")
+        self.sidebar_content.pack(fill="both", expand=True)
 
-        self.entry_pin = ctk.CTkEntry(self.sidebar, placeholder_text="PIN (4 dígitos)", show="*", fg_color="#FFFFFF", text_color="#000000")
-        self.entry_pin.pack(pady=10, padx=20, fill="x")
+        self.view_register = ctk.CTkFrame(self.sidebar_content, fg_color="transparent")
+        self.view_login = ctk.CTkFrame(self.sidebar_content, fg_color="transparent")
+        self.view_delete = ctk.CTkFrame(self.sidebar_content, fg_color="transparent")
 
-        self.btn_login = ctk.CTkButton(self.sidebar, text="Ingresar / Registrar", fg_color="#3A86FF", hover_color="#2a62bc", command=self.handle_login)
-        self.btn_login.pack(pady=10, padx=20, fill="x")
+        # --- Register View ---
+        ctk.CTkLabel(self.view_register, text="Registrar Nuevo Usuario", font=("Arial", 14, "bold"), text_color="#00509E").pack(pady=10)
+        self.reg_username = ctk.CTkEntry(self.view_register, placeholder_text="Nombre de Usuario", fg_color="#FFFFFF", text_color="#000000")
+        self.reg_username.pack(pady=10, padx=20, fill="x")
+        self.reg_pin = ctk.CTkEntry(self.view_register, placeholder_text="PIN (4 dígitos)", show="*", fg_color="#FFFFFF", text_color="#000000")
+        self.reg_pin.pack(pady=10, padx=20, fill="x")
+        ctk.CTkButton(self.view_register, text="Agregar Usuario", fg_color="#3A86FF", hover_color="#2a62bc", command=self.do_register).pack(pady=10, padx=20, fill="x")
+        ctk.CTkButton(self.view_register, text="Ir a Acceder a Usuario", fg_color="#6c757d", command=lambda: self.show_view(self.view_login)).pack(pady=10, padx=20, fill="x")
+        ctk.CTkButton(self.view_register, text="Ir a Borrar Usuario", fg_color="#FF4D4D", command=lambda: self.show_view(self.view_delete)).pack(pady=10, padx=20, fill="x")
 
-        self.btn_delete_user = ctk.CTkButton(self.sidebar, text="Borrar Usuario", fg_color="#FF4D4D", hover_color="#cc0000", command=self.delete_user)
-        self.btn_delete_user.pack(pady=10, padx=20, fill="x")
+        # --- Login View ---
+        ctk.CTkLabel(self.view_login, text="Acceder a Usuario", font=("Arial", 14, "bold"), text_color="#00509E").pack(pady=10)
+        self.login_user_combo = ctk.CTkComboBox(self.view_login, values=["Sin usuarios"])
+        self.login_user_combo.pack(pady=10, padx=20, fill="x")
+        self.login_pin = ctk.CTkEntry(self.view_login, placeholder_text="PIN (4 dígitos)", show="*", fg_color="#FFFFFF", text_color="#000000")
+        self.login_pin.pack(pady=10, padx=20, fill="x")
+        ctk.CTkButton(self.view_login, text="Acceder", fg_color="#3A86FF", hover_color="#2a62bc", command=self.do_login).pack(pady=10, padx=20, fill="x")
+        ctk.CTkButton(self.view_login, text="Ir a Registrar Usuario", fg_color="#6c757d", command=lambda: self.show_view(self.view_register)).pack(pady=10, padx=20, fill="x")
+        ctk.CTkButton(self.view_login, text="Ir a Borrar Usuario", fg_color="#FF4D4D", command=lambda: self.show_view(self.view_delete)).pack(pady=10, padx=20, fill="x")
+
+        # --- Delete View ---
+        ctk.CTkLabel(self.view_delete, text="Borrar Usuario", font=("Arial", 14, "bold"), text_color="#FF4D4D").pack(pady=10)
+        self.delete_user_combo = ctk.CTkComboBox(self.view_delete, values=["Sin usuarios"])
+        self.delete_user_combo.pack(pady=10, padx=20, fill="x")
+        self.delete_pin = ctk.CTkEntry(self.view_delete, placeholder_text="PIN del usuario", show="*", fg_color="#FFFFFF", text_color="#000000")
+        self.delete_pin.pack(pady=10, padx=20, fill="x")
+        ctk.CTkButton(self.view_delete, text="Borrar Usuario", fg_color="#FF4D4D", hover_color="#cc0000", command=self.do_delete).pack(pady=10, padx=20, fill="x")
+        ctk.CTkButton(self.view_delete, text="Ir a Registrar Usuario", fg_color="#6c757d", command=lambda: self.show_view(self.view_register)).pack(pady=10, padx=20, fill="x")
+        ctk.CTkButton(self.view_delete, text="Ir a Acceder a Usuario", fg_color="#6c757d", command=lambda: self.show_view(self.view_login)).pack(pady=10, padx=20, fill="x")
 
         self.btn_close_sidebar = ctk.CTkButton(self.sidebar, text="Cerrar", fg_color="#00509E", hover_color="#003f7a", command=self.toggle_sidebar)
-        self.btn_close_sidebar.pack(pady=10, padx=20, fill="x")
+        self.btn_close_sidebar.pack(side="bottom", pady=20, padx=20, fill="x")
+
+        # Mostrar por defecto la vista de registro
+        self.show_view(self.view_register)
 
         # Área Central de Trabajo
         self.work_area = ctk.CTkFrame(self.main_container, fg_color="#FFFFFF")
@@ -155,8 +183,27 @@ class SetCalculatorApp(ctk.CTk):
         if self.sidebar.winfo_ismapped():
             self.sidebar.place_forget()
         else:
+            self.update_user_combos()
             self.sidebar.place(x=0, y=0, relheight=1)
             self.sidebar.lift()
+
+    def update_user_combos(self):
+        users = list(self.users_data.keys())
+        if not users:
+            users = ["Sin usuarios"]
+        self.login_user_combo.configure(values=users)
+        self.delete_user_combo.configure(values=users)
+        if self.users_data:
+            self.login_user_combo.set(users[0])
+            self.delete_user_combo.set(users[0])
+        else:
+            self.login_user_combo.set("Sin usuarios")
+            self.delete_user_combo.set("Sin usuarios")
+
+    def show_view(self, view):
+        for v in (self.view_register, self.view_login, self.view_delete):
+            v.pack_forget()
+        view.pack(fill="both", expand=True)
 
     def open_validation_window(self):
         val_win = ctk.CTkToplevel(self)
@@ -187,45 +234,82 @@ class SetCalculatorApp(ctk.CTk):
         txt_log.configure(state="disabled")
 
     # --- FUNCIONES DE USUARIO ---
-    def handle_login(self):
-        username = self.entry_username.get().strip()
-        pin = self.entry_pin.get().strip()
+    def do_register(self):
+        username = self.reg_username.get().strip()
+        pin = self.reg_pin.get().strip()
 
         if not username or not pin:
             messagebox.showerror("Error", "Debes ingresar usuario y PIN.")
             return
 
         if not pin.isdigit() or len(pin) != 4:
-            messagebox.showerror("Error", "El PIN debe ser estrictamente de 4 dígitos numéricos.")
+            messagebox.showerror("Error", "El PIN debe ser estrictamente de 4 dígitos numéricos. Por favor, inténtalo nuevamente.")
             return
 
         if username in self.users_data:
-            if self.users_data[username] == pin:
-                self.current_user = username
-                self.lbl_user_status.configure(text=f"Sesión: {username}", text_color="#00509E")
-                messagebox.showinfo("Éxito", f"Bienvenido de nuevo, {username}")
-                self.toggle_sidebar()
-            else:
-                messagebox.showerror("Error", "PIN incorrecto.")
-        else:
-            self.users_data[username] = pin
-            self.save_users()
+            messagebox.showerror("Error", "El usuario ya existe.")
+            return
+
+        self.users_data[username] = pin
+        self.save_users()
+        self.current_user = username
+        self.lbl_user_status.configure(text=f"Sesión: {username}", text_color="#00509E")
+        messagebox.showinfo("Éxito", f"Usuario {username} creado y logueado.")
+        self.update_user_combos()
+        self.toggle_sidebar()
+        
+        # Limpiar campos
+        self.reg_username.delete(0, 'end')
+        self.reg_pin.delete(0, 'end')
+
+    def do_login(self):
+        username = self.login_user_combo.get()
+        pin = self.login_pin.get().strip()
+
+        if username == "Sin usuarios" or username not in self.users_data:
+            messagebox.showerror("Error", "Selecciona un usuario válido.")
+            return
+
+        if not pin:
+            messagebox.showerror("Error", "Debes ingresar el PIN.")
+            return
+
+        if self.users_data[username] == pin:
             self.current_user = username
             self.lbl_user_status.configure(text=f"Sesión: {username}", text_color="#00509E")
-            messagebox.showinfo("Éxito", f"Usuario {username} creado y logueado.")
+            messagebox.showinfo("Éxito", f"Has iniciado sesión como {username}")
             self.toggle_sidebar()
+            
+            # Limpiar campos
+            self.login_pin.delete(0, 'end')
+        else:
+            messagebox.showerror("Error", "Contraseña incorrecta. Por favor, inténtalo de nuevo.")
 
-    def delete_user(self):
-        username = self.entry_username.get().strip()
-        if username in self.users_data:
+    def do_delete(self):
+        username = self.delete_user_combo.get()
+        pin = self.delete_pin.get().strip()
+
+        if username == "Sin usuarios" or username not in self.users_data:
+            messagebox.showerror("Error", "Selecciona un usuario válido.")
+            return
+
+        if not pin:
+            messagebox.showerror("Error", "Debes ingresar el PIN.")
+            return
+
+        if self.users_data[username] == pin:
             del self.users_data[username]
             self.save_users()
             messagebox.showinfo("Éxito", f"Usuario {username} eliminado correctamente.")
+            self.update_user_combos()
             if self.current_user == username:
                 self.current_user = None
                 self.lbl_user_status.configure(text="No has iniciado sesión")
+            
+            # Limpiar campos
+            self.delete_pin.delete(0, 'end')
         else:
-            messagebox.showerror("Error", "El usuario no existe.")
+            messagebox.showerror("Error", "Contraseña incorrecta. Por favor, inténtalo de nuevo.")
 
     # --- FUNCIONES LÓGICAS DE CONJUNTOS ---
     def generate_sets(self):
