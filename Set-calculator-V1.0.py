@@ -176,6 +176,18 @@ class SetCalculatorApp(ctk.CTk):
         ctk.CTkButton(action_frame, text="Borrar", fg_color="#FF4D4D", hover_color="#cc0000", command=self.clear_expression).pack(side="left", padx=10)
         ctk.CTkButton(action_frame, text="Validar y Calcular", fg_color="#00509E", hover_color="#003f7a", command=self.calculate).pack(side="left", padx=10)
 
+        # Operaciones Automáticas
+        auto_op_frame = ctk.CTkFrame(self.frame_calc, fg_color="transparent")
+        auto_op_frame.pack(pady=10)
+
+        ctk.CTkLabel(auto_op_frame, text="Todos los subconjuntos:", text_color="#00509E", font=("Arial", 12, "bold")).pack(side="left", padx=5)
+        self.all_op_var = ctk.StringVar(value="∪")
+        self.combo_all_op = ctk.CTkComboBox(auto_op_frame, values=["∪", "∩", "-", "Δ"], variable=self.all_op_var, width=60)
+        self.combo_all_op.pack(side="left", padx=5)
+        ctk.CTkButton(auto_op_frame, text="Operar Todos", fg_color="#3A86FF", hover_color="#2a62bc", command=self.operate_all).pack(side="left", padx=5)
+
+        ctk.CTkButton(auto_op_frame, text="Operación Aleatoria", fg_color="#8338ec", hover_color="#6227b6", command=self.random_operation).pack(side="left", padx=20)
+
         # --- SECCIÓN: Resultados y Diagrama ---
         self.frame_results = ctk.CTkFrame(self.work_area, fg_color="#FFFFFF")
         self.frame_results.pack(fill="both", expand=True, pady=10, padx=10)
@@ -355,13 +367,7 @@ class SetCalculatorApp(ctk.CTk):
         self.C = parse_set(self.entries["C"].get())
         self.D = parse_set(self.entries["D"].get())
         
-        # Para evitar problemas de lógica, si hay elementos en los subconjuntos 
-        # que no están en U, los agregamos automáticamente al conjunto universal.
-        missing_in_u = (self.A | self.B | self.C | self.D) - self.U
-        if missing_in_u:
-            self.U.update(missing_in_u)
-            self.entries["U"].delete(0, 'end')
-            self.entries["U"].insert(0, ", ".join(sorted(list(self.U))))
+        
 
     def validate_strict_rules(self):
         self.txt_validation.configure(state="normal")
@@ -370,12 +376,15 @@ class SetCalculatorApp(ctk.CTk):
         log = "Validando reglas de Teoría de Conjuntos...\n"
         subsets = {'A': self.A, 'B': self.B, 'C': self.C, 'D': self.D}
         all_valid = True
+        error_msg = ""
         
         for name, subset in subsets.items():
             if not subset.issubset(self.U):
                 invalid_elements = subset - self.U
                 log += f"[ERROR] {name} contiene elementos que no están en U: {invalid_elements}\n"
                 all_valid = False
+                if not error_msg:
+                    error_msg = f"Error: Los elementos {invalid_elements} del conjunto {name} no existen en el Conjunto Universal (U)."
             else:
                 log += f"[OK] {name} es un subconjunto válido de U.\n"
                 
@@ -383,6 +392,7 @@ class SetCalculatorApp(ctk.CTk):
             log += "[ÉXITO] Todos los conjuntos respetan la pertenencia al Conjunto Universal.\n"
         else:
             log += "\n[!] Validación fallida. Revisa los elementos."
+            self.lbl_result.configure(text=error_msg)
             
         self.txt_validation.insert("0.0", log)
         self.txt_validation.configure(state="disabled")
@@ -479,6 +489,35 @@ class SetCalculatorApp(ctk.CTk):
             
         except Exception as e:
             pass # Errores ya manejados en calculate()
+
+    def operate_all(self):
+        op = self.all_op_var.get()
+        self.expression = f"A {op} B {op} C {op} D"
+        self.lbl_expr.configure(text=f"Expresión: {self.expression}")
+        self.calculate()
+
+    def random_operation(self):
+        subsets = ['A', 'B', 'C', 'D']
+        operators = ['∪', '∩', '-', 'Δ']
+        
+        # Elegir cantidad aleatoria de subconjuntos (de 2 a 4)
+        num_subsets = random.randint(2, 4)
+        chosen_subsets = random.sample(subsets, num_subsets)
+        
+        # Complemento opcional a algunos
+        for i in range(len(chosen_subsets)):
+            if random.random() < 0.3:
+                chosen_subsets[i] += "^c"
+                
+        # Construir expresión
+        expr = chosen_subsets[0]
+        for i in range(1, num_subsets):
+            op = random.choice(operators)
+            expr += f" {op} {chosen_subsets[i]}"
+            
+        self.expression = expr
+        self.lbl_expr.configure(text=f"Expresión: {self.expression}")
+        self.calculate()
 
 if __name__ == "__main__":
     app = SetCalculatorApp()
